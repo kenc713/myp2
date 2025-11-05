@@ -1,11 +1,11 @@
-// WebSocket connection
+// WebSocket 接続
 let ws = null;
 let currentRoomId = null;
 let currentUserId = null;
 let currentVote = null;
 let participants = new Map();
 
-// DOM elements
+// DOM 要素
 const startScreen = document.getElementById('startScreen');
 const roomScreen = document.getElementById('roomScreen');
 const userNameInput = document.getElementById('userName');
@@ -24,34 +24,36 @@ const resultsSection = document.getElementById('resultsSection');
 const resultsDisplay = document.getElementById('resultsDisplay');
 const statusMessage = document.getElementById('statusMessage');
 
-// Initialize WebSocket connection
+// WebSocket 接続を初期化
 function connectWebSocket() {
+
+    // WebSocket 接続 URL を組み立てる
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}`;
-    
     ws = new WebSocket(wsUrl);
-    
+
+    // WebSocket イベントハンドラの設定
     ws.onopen = () => {
         console.log('Connected to server');
     };
-    
+
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         handleMessage(data);
     };
-    
+
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         showStatus('接続エラーが発生しました', 'error');
     };
-    
+
     ws.onclose = () => {
         console.log('Disconnected from server');
         showStatus('サーバーから切断されました', 'error');
     };
 }
 
-// Handle incoming messages
+// 受信メッセージの処理
 function handleMessage(data) {
     switch (data.type) {
         case 'roomCreated':
@@ -81,12 +83,21 @@ function handleMessage(data) {
     }
 }
 
-// Event handlers
+// ルーム作成ボタン押下時の処理
 createRoomBtn.addEventListener('click', () => {
+
+    // ユーザー名取得（未入力時は匿名）
     const userName = userNameInput.value.trim() || '匿名';
+    
+    // WebSocket接続
+    // 内部で非同期的に WebSocket を開く
     connectWebSocket();
     
+    // WebSocket 開通時の処理を設定
+    // connectWebSocket 内で WebSocket が開通したときに呼ばれる想定
     ws.onopen = () => {
+
+        // ルーム作成メッセージ送信
         ws.send(JSON.stringify({
             type: 'createRoom',
             userName: userName
@@ -94,6 +105,7 @@ createRoomBtn.addEventListener('click', () => {
     };
 });
 
+// ルーム参加ボタン押下時の処理
 joinRoomBtn.addEventListener('click', () => {
     const roomId = roomIdInput.value.trim().toUpperCase();
     const userName = userNameInput.value.trim() || '匿名';
@@ -114,6 +126,7 @@ joinRoomBtn.addEventListener('click', () => {
     };
 });
 
+// ルームIDコピー
 copyRoomIdBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(currentRoomId).then(() => {
         showStatus('ルームIDをコピーしました！', 'success');
@@ -122,46 +135,50 @@ copyRoomIdBtn.addEventListener('click', () => {
     });
 });
 
-// Card selection
+// 投票カード選択時の処理
 cardsContainer.addEventListener('click', (e) => {
     if (e.target.classList.contains('card-item')) {
-        // Remove previous selection
+        // 既存の選択解除
         document.querySelectorAll('.card-item').forEach(card => {
             card.classList.remove('selected');
         });
-        
-        // Select new card
+
+        // 選択状態にする
         e.target.classList.add('selected');
         currentVote = e.target.dataset.value;
-        
-        // Send vote to server
+
+        // 投票メッセージ送信
         ws.send(JSON.stringify({
             type: 'vote',
             vote: currentVote
         }));
-        
+
         showStatus('投票しました！', 'success');
     }
 });
 
+// 投票公開ボタン押下時の処理
 revealBtn.addEventListener('click', () => {
     ws.send(JSON.stringify({
         type: 'revealVotes'
     }));
 });
 
+// 投票リセットボタン押下時の処理
 resetBtn.addEventListener('click', () => {
     ws.send(JSON.stringify({
         type: 'resetVotes'
     }));
 });
 
-// Message handlers
+// メッセージハンドラ
+// サーバーからの応答メッセージに応じて UI を更新する
+
 function handleRoomCreated(data) {
     currentRoomId = data.roomId;
     currentUserId = data.userId;
     
-    // Initialize participants with self
+    // 自分自身で参加者を初期化
     participants.set(data.userId, { 
         hasVoted: false, 
         vote: null,
@@ -177,7 +194,7 @@ function handleJoinedRoom(data) {
     currentRoomId = data.roomId;
     currentUserId = data.userId;
     
-    // Initialize participants with userNames
+    // ユーザー名で参加者を初期化
     participants.clear();
     Object.entries(data.users).forEach(([userId, userName]) => {
         participants.set(userId, { 
@@ -198,8 +215,17 @@ function handleJoinedRoom(data) {
 }
 
 function handleUserJoined(data) {
-    // Update participants list with userNames
+    /**
+     * 新しいユーザーがルームに参加したときの処理。
+     * 
+     * @param {Object} data - サーバーからのメッセージデータ。
+     */
+
+
+    // 参加者リストをクリア
     participants.clear();
+
+    // 参加者リストを再構築
     Object.entries(data.users).forEach(([userId, userName]) => {
         participants.set(userId, { 
             hasVoted: false, 
@@ -208,6 +234,7 @@ function handleUserJoined(data) {
         });
     });
     
+    // UI更新
     updateParticipantsList();
     showStatus(`${data.userName} が参加しました`, 'info');
 }
@@ -227,7 +254,12 @@ function handleVoteUpdated(data) {
 }
 
 function handleVotesRevealed(data) {
-    // Update votes for all participants
+    /**
+     * 投票公開の処理。
+     * 
+     * @param {Object} data - サーバーからのメッセージデータ。
+     */
+
     Object.entries(data.votes).forEach(([userId, vote]) => {
         const participant = participants.get(userId);
         if (participant) {
@@ -241,7 +273,10 @@ function handleVotesRevealed(data) {
 }
 
 function handleVotesReset() {
-    // Clear all votes
+    /**
+     * 投票リセットの処理。
+     */
+
     participants.forEach(participant => {
         participant.hasVoted = false;
         participant.vote = null;
@@ -249,7 +284,7 @@ function handleVotesReset() {
     
     currentVote = null;
     
-    // Clear UI
+    // UI をクリア
     document.querySelectorAll('.card-item').forEach(card => {
         card.classList.remove('selected');
     });
@@ -259,8 +294,14 @@ function handleVotesReset() {
     showStatus('投票がリセットされました', 'info');
 }
 
-// UI functions
 function showRoomScreen(displayName) {
+    /**
+     * ルーム画面を表示する。
+     * 
+     * @param {string} displayName - 表示するユーザー名。
+     */
+
+
     startScreen.classList.add('hidden');
     roomScreen.classList.remove('hidden');
     
@@ -269,6 +310,10 @@ function showRoomScreen(displayName) {
 }
 
 function updateParticipantsList() {
+    /**
+     * 参加者UIを更新する。
+     */
+
     participantsList.innerHTML = '';
     participantCount.textContent = participants.size;
     
@@ -304,6 +349,13 @@ function updateParticipantsList() {
 }
 
 function displayResults(votes) {
+    /**
+     * 投票結果を表示する。
+     *
+     * @param {Object} votes - ユーザーIDをキー、投票値を値とするオブジェクト。
+     */
+
+
     resultsSection.classList.remove('hidden');
     resultsDisplay.innerHTML = '';
     
@@ -329,6 +381,13 @@ function displayResults(votes) {
 }
 
 function showStatus(message, type = 'info') {
+    /**
+     * 一時的なステータスメッセージを表示する。
+     *
+     * @param {string} message - 表示するメッセージ。
+     * @param {string} type - メッセージの種類: 'info', 'success', 'error'。
+     */
+
     statusMessage.textContent = message;
     statusMessage.className = `status-message ${type}`;
     statusMessage.classList.remove('hidden');
@@ -338,7 +397,7 @@ function showStatus(message, type = 'info') {
     }, 3000);
 }
 
-// Handle page unload
+// ページアンロード時の処理
 window.addEventListener('beforeunload', () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
