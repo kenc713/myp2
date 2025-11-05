@@ -23,8 +23,6 @@ const participantCount = document.getElementById('participantCount');
 const cardsContainer = document.getElementById('cardsContainer');
 const revealBtn = document.getElementById('revealBtn');
 const resetBtn = document.getElementById('resetBtn');
-const resultsSection = document.getElementById('resultsSection');
-const resultsDisplay = document.getElementById('resultsDisplay');
 const statusMessage = document.getElementById('statusMessage');
 
 // WebSocket 接続を初期化
@@ -121,7 +119,7 @@ createRoomBtn.addEventListener('click', () => {
     // 選択された数列を取得してローカルに保存
     const selectedSequence = (sequenceSelect && sequenceSelect.value) ? sequenceSelect.value : 'fibonacci';
     currentSequence = selectedSequence;
-    
+
     // カードを先にレンダリングしておく
     renderCards(currentSequence);
 
@@ -260,7 +258,12 @@ function handleJoinedRoom(data) {
     updateParticipantsList();
     
     if (data.revealed && data.votes) {
-        displayResults(data.votes);
+        // 参加者の votes を更新してカード上に表示する
+        Object.entries(data.votes).forEach(([userId, vote]) => {
+            const participant = participants.get(userId);
+            if (participant) participant.vote = vote;
+        });
+        updateParticipantsList();
     }
     
     showStatus('ルームに参加しました！', 'success');
@@ -324,7 +327,7 @@ function handleVotesRevealed(data) {
         }
     });
     
-    displayResults(data.votes);
+    // 結果パネルは廃止、参加者カードに投票値を表示する
     updateParticipantsList();
     showStatus('投票が公開されました！', 'success');
 }
@@ -345,8 +348,6 @@ function handleVotesReset() {
     document.querySelectorAll('.card-item').forEach(card => {
         card.classList.remove('selected');
     });
-    
-    resultsSection.classList.add('hidden');
     updateParticipantsList();
     showStatus('投票がリセットされました', 'info');
 }
@@ -364,6 +365,8 @@ function showRoomScreen(displayName) {
     
     roomIdDisplay.textContent = currentRoomId;
     userNameDisplay.textContent = displayName || currentUserId;
+    // 画面表示時にカードを確実にレンダリング（sequence が設定済みであればそれを使用）
+    renderCards(currentSequence);
 }
 
 // オーナーのみ表示される操作ボタンを制御
@@ -416,37 +419,7 @@ function updateParticipantsList() {
     });
 }
 
-function displayResults(votes) {
-    /**
-     * 投票結果を表示する。
-     *
-     * @param {Object} votes - ユーザーIDをキー、投票値を値とするオブジェクト。
-     */
-
-
-    resultsSection.classList.remove('hidden');
-    resultsDisplay.innerHTML = '';
-    
-    Object.entries(votes).forEach(([userId, vote]) => {
-        const resultItem = document.createElement('div');
-        resultItem.className = 'result-item';
-        
-        const participant = participants.get(userId);
-        const displayName = participant ? participant.userName : userId;
-        
-        const name = document.createElement('div');
-        name.className = 'result-name';
-        name.textContent = displayName;
-        
-        const voteDisplay = document.createElement('div');
-        voteDisplay.className = 'result-vote';
-        voteDisplay.textContent = vote;
-        
-        resultItem.appendChild(name);
-        resultItem.appendChild(voteDisplay);
-        resultsDisplay.appendChild(resultItem);
-    });
-}
+// displayResults 関数は削除され、参加者カードに投票が表示されるようになりました。
 
 function showStatus(message, type = 'info') {
     /**
