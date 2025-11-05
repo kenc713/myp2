@@ -43,10 +43,12 @@ wss.on('connection', (ws) => {
         if (ws.roomId && ws.userId) {
             const room = rooms.get(ws.roomId);
             if (room) {
+                const userName = ws.userName;
                 room.users.delete(ws.userId);
                 broadcastToRoom(ws.roomId, {
                     type: 'userLeft',
-                    userId: ws.userId
+                    userId: ws.userId,
+                    userName: userName
                 });
                 
                 // Clean up empty rooms
@@ -76,13 +78,16 @@ function handleMessage(ws, data) {
         case 'resetVotes':
             handleResetVotes(ws, data);
             break;
+        default:
+            console.log('Unknown message type:', data.type);
+            break;
     }
 }
 
 function handleCreateRoom(ws, data) {
     const roomId = generateRoomId();
     const userName = data.userName || 'Anonymous';
-    const userId = generateUserId(userName);
+    const userId = generateUserId();
     
     rooms.set(roomId, {
         users: new Map(),
@@ -118,7 +123,7 @@ function handleJoinRoom(ws, data) {
     }
     
     const name = userName || 'Anonymous';
-    const userId = generateUserId(name);
+    const userId = generateUserId();
     room.users.set(userId, ws);
     
     ws.roomId = roomId;
@@ -212,10 +217,10 @@ function generateRoomId() {
     return crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
-function generateUserId(userName) {
+function generateUserId() {
     const timestamp = Date.now().toString(36);
-    const random = crypto.randomBytes(2).toString('hex');
-    return `${userName}-${timestamp}-${random}`;
+    const random = crypto.randomBytes(4).toString('hex');
+    return `${timestamp}-${random}`;
 }
 
 const PORT = process.env.PORT || 3000;

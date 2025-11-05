@@ -215,7 +215,7 @@ function handleUserJoined(data) {
 function handleUserLeft(data) {
     participants.delete(data.userId);
     updateParticipantsList();
-    showStatus(`${data.userId} が退出しました`, 'info');
+    showStatus(`${data.userName || data.userId} が退出しました`, 'info');
 }
 
 function handleVoteUpdated(data) {
