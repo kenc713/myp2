@@ -89,12 +89,14 @@ function handleCreateRoom(ws, data) {
     const userName = data.userName || 'Anonymous';
     const userId = generateUserId();
     
-    // room オブジェクトに ownerId を追加してルーム作成者を記録する
+    // room オブジェクトに ownerId と sequence を追加してルーム作成者と選択された数列を記録する
+    const sequence = data.sequence || 'fibonacci';
     rooms.set(roomId, {
         users: new Map(),
         votes: new Map(),
         revealed: false,
-        ownerId: userId
+        ownerId: userId,
+        sequence: sequence
     });
     
     const room = rooms.get(roomId);
@@ -109,6 +111,7 @@ function handleCreateRoom(ws, data) {
         roomId: roomId,
         userId: userId,
         ownerId: room.ownerId,
+        sequence: room.sequence,
         userName: userName
     }));
 }
@@ -146,6 +149,7 @@ function handleJoinRoom(ws, data) {
         userId: userId,
         userName: name,
         ownerId: room.ownerId,
+        sequence: room.sequence,
         users: userList,
         votes: room.revealed ? Object.fromEntries(room.votes) : null,
         revealed: room.revealed
@@ -157,6 +161,7 @@ function handleJoinRoom(ws, data) {
         userId: userId,
         userName: name,
         ownerId: room.ownerId,
+        sequence: room.sequence,
         users: userList
     }, ws);
 }

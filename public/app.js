@@ -5,11 +5,13 @@ let currentUserId = null;
 let currentVote = null;
 let participants = new Map();
 let currentIsOwner = false;
+let currentSequence = 'fibonacci';
 
 // DOM 要素
 const startScreen = document.getElementById('startScreen');
 const roomScreen = document.getElementById('roomScreen');
 const userNameInput = document.getElementById('userName');
+const sequenceSelect = document.getElementById('sequenceSelect');
 const roomIdInput = document.getElementById('roomIdInput');
 const createRoomBtn = document.getElementById('createRoomBtn');
 const joinRoomBtn = document.getElementById('joinRoomBtn');
@@ -54,6 +56,32 @@ function connectWebSocket() {
     };
 }
 
+// 初期表示: オーナー用ボタンはデフォルトで非表示にする
+updateOwnerControls();
+
+// シーケンス（カード）を取得するユーティリティ
+function getSequenceValues(key) {
+    if (key === 'natural') {
+        // 自然数列（サンプル）
+        return ['1','2','3','4','5','6','7','8','9','?'];
+    }
+    // デフォルトはフィボナッチ
+    return ['0','1','2','3','5','8','13','21','?'];
+}
+
+// カードを動的にレンダリングする
+function renderCards(sequenceKey) {
+    const values = getSequenceValues(sequenceKey);
+    cardsContainer.innerHTML = '';
+    values.forEach(v => {
+        const d = document.createElement('div');
+        d.className = 'card-item';
+        d.dataset.value = v;
+        d.textContent = v;
+        cardsContainer.appendChild(d);
+    });
+}
+
 // 受信メッセージの処理
 function handleMessage(data) {
     switch (data.type) {
@@ -90,18 +118,23 @@ createRoomBtn.addEventListener('click', () => {
     // ユーザー名取得（未入力時は匿名）
     const userName = userNameInput.value.trim() || '匿名';
     
-    // WebSocket接続
-    // 内部で非同期的に WebSocket を開く
-    connectWebSocket();
+    // 選択された数列を取得してローカルに保存
+    const selectedSequence = (sequenceSelect && sequenceSelect.value) ? sequenceSelect.value : 'fibonacci';
+    currentSequence = selectedSequence;
     
-    // WebSocket 開通時の処理を設定
-    // connectWebSocket 内で WebSocket が開通したときに呼ばれる想定
-    ws.onopen = () => {
+    // カードを先にレンダリングしておく
+    renderCards(currentSequence);
 
-        // ルーム作成メッセージ送信
+    // WebSocket接続（内部で非同期的に WebSocket を開く）
+    connectWebSocket();
+
+    // WebSocket 開通時の処理を設定
+    ws.onopen = () => {
+        // ルーム作成メッセージ送信（選択されたシーケンスを含める）
         ws.send(JSON.stringify({
             type: 'createRoom',
-            userName: userName
+            userName: userName,
+            sequence: currentSequence
         }));
     };
 });
@@ -180,6 +213,11 @@ function handleRoomCreated(data) {
     currentUserId = data.userId;
     // ルーム作成者情報を保存（server が ownerId を返す）
     currentIsOwner = (data.ownerId && data.ownerId === data.userId) || false;
+    // サーバー返却のシーケンスを適用
+    if (data.sequence) {
+        currentSequence = data.sequence;
+        renderCards(currentSequence);
+    }
     
     // 自分自身で参加者を初期化
     participants.set(data.userId, { 
@@ -200,6 +238,11 @@ function handleJoinedRoom(data) {
     currentUserId = data.userId;
     // サーバーが送ってくる ownerId を元に自分がオーナーか判定
     currentIsOwner = (data.ownerId && data.ownerId === data.userId) || false;
+    // サーバーが教えるルームのシーケンスでカードをレンダリング
+    if (data.sequence) {
+        currentSequence = data.sequence;
+        renderCards(currentSequence);
+    }
     
     // ユーザー名で参加者を初期化
     participants.clear();

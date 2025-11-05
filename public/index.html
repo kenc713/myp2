@@ -21,6 +21,13 @@
                     <label for="userName">あなたの名前:</label>
                     <input type="text" id="userName" placeholder="例: 田中太郎" maxlength="20">
                 </div>
+                <div class="form-group">
+                    <label for="sequenceSelect">カードの数列:</label>
+                    <select id="sequenceSelect">
+                        <option value="fibonacci">フィボナッチ (0,1,2,3,5,8...)</option>
+                        <option value="natural">自然数 (1,2,3,4...)</option>
+                    </select>
+                </div>
                 <button id="createRoomBtn" class="btn btn-primary">新しいルームを作成</button>
                 
                 <div class="divider">または</div>
@@ -53,15 +60,7 @@
             <div class="voting-section">
                 <h3>あなたの見積もりを選択:</h3>
                 <div class="cards-container" id="cardsContainer">
-                    <div class="card-item" data-value="0">0</div>
-                    <div class="card-item" data-value="1">1</div>
-                    <div class="card-item" data-value="2">2</div>
-                    <div class="card-item" data-value="3">3</div>
-                    <div class="card-item" data-value="5">5</div>
-                    <div class="card-item" data-value="8">8</div>
-                    <div class="card-item" data-value="13">13</div>
-                    <div class="card-item" data-value="21">21</div>
-                    <div class="card-item" data-value="?">?</div>
+                    <!-- カードはクライアント側で選択した数列に応じて動的に生成されます -->
                 </div>
             </div>
 
