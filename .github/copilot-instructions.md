@@ -49,4 +49,5 @@
 ### コミットメッセージ
 - 日本語で生成すること。
 - conventional commitsスタイルを使うことを推奨。
-    - prefix: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert 
+    - <prefix>: <description>のスタイルを使うこと。
+    - prefiは、次から選ぶこと：feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert 

@@ -89,10 +89,12 @@ function handleCreateRoom(ws, data) {
     const userName = data.userName || 'Anonymous';
     const userId = generateUserId();
     
+    // room オブジェクトに ownerId を追加してルーム作成者を記録する
     rooms.set(roomId, {
         users: new Map(),
         votes: new Map(),
-        revealed: false
+        revealed: false,
+        ownerId: userId
     });
     
     const room = rooms.get(roomId);
@@ -106,6 +108,7 @@ function handleCreateRoom(ws, data) {
         type: 'roomCreated',
         roomId: roomId,
         userId: userId,
+        ownerId: room.ownerId,
         userName: userName
     }));
 }
@@ -142,6 +145,7 @@ function handleJoinRoom(ws, data) {
         roomId: roomId,
         userId: userId,
         userName: name,
+        ownerId: room.ownerId,
         users: userList,
         votes: room.revealed ? Object.fromEntries(room.votes) : null,
         revealed: room.revealed
@@ -152,6 +156,7 @@ function handleJoinRoom(ws, data) {
         type: 'userJoined',
         userId: userId,
         userName: name,
+        ownerId: room.ownerId,
         users: userList
     }, ws);
 }
@@ -178,9 +183,14 @@ function handleRevealVotes(ws, data) {
     const room = rooms.get(ws.roomId);
     
     if (!room) return;
-    
+    // オーナーのみが実行可能
+    if (ws.userId !== room.ownerId) {
+        ws.send(JSON.stringify({ type: 'error', message: '権限がありません' }));
+        return;
+    }
+
     room.revealed = true;
-    
+
     broadcastToRoom(ws.roomId, {
         type: 'votesRevealed',
         votes: Object.fromEntries(room.votes)
@@ -191,10 +201,15 @@ function handleResetVotes(ws, data) {
     const room = rooms.get(ws.roomId);
     
     if (!room) return;
-    
+    // オーナーのみが実行可能
+    if (ws.userId !== room.ownerId) {
+        ws.send(JSON.stringify({ type: 'error', message: '権限がありません' }));
+        return;
+    }
+
     room.votes.clear();
     room.revealed = false;
-    
+
     broadcastToRoom(ws.roomId, {
         type: 'votesReset'
     });

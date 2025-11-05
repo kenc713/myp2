@@ -4,6 +4,7 @@ let currentRoomId = null;
 let currentUserId = null;
 let currentVote = null;
 let participants = new Map();
+let currentIsOwner = false;
 
 // DOM 要素
 const startScreen = document.getElementById('startScreen');
@@ -177,6 +178,8 @@ resetBtn.addEventListener('click', () => {
 function handleRoomCreated(data) {
     currentRoomId = data.roomId;
     currentUserId = data.userId;
+    // ルーム作成者情報を保存（server が ownerId を返す）
+    currentIsOwner = (data.ownerId && data.ownerId === data.userId) || false;
     
     // 自分自身で参加者を初期化
     participants.set(data.userId, { 
@@ -186,6 +189,8 @@ function handleRoomCreated(data) {
     });
     
     showRoomScreen(data.userName || data.userId);
+    // オーナーのみ表示される操作ボタンの反映
+    updateOwnerControls();
     updateParticipantsList();
     showStatus('ルームを作成しました！', 'success');
 }
@@ -193,6 +198,8 @@ function handleRoomCreated(data) {
 function handleJoinedRoom(data) {
     currentRoomId = data.roomId;
     currentUserId = data.userId;
+    // サーバーが送ってくる ownerId を元に自分がオーナーか判定
+    currentIsOwner = (data.ownerId && data.ownerId === data.userId) || false;
     
     // ユーザー名で参加者を初期化
     participants.clear();
@@ -205,6 +212,8 @@ function handleJoinedRoom(data) {
     });
     
     showRoomScreen(data.userName || data.userId);
+    // オーナーだけが使えるボタンを表示/非表示
+    updateOwnerControls();
     updateParticipantsList();
     
     if (data.revealed && data.votes) {
@@ -236,6 +245,11 @@ function handleUserJoined(data) {
     
     // UI更新
     updateParticipantsList();
+    // ブロードキャストに ownerId が含まれていればオーナー状態を更新
+    if (data.ownerId) {
+        currentIsOwner = (currentUserId === data.ownerId);
+        updateOwnerControls();
+    }
     showStatus(`${data.userName} が参加しました`, 'info');
 }
 
@@ -307,6 +321,17 @@ function showRoomScreen(displayName) {
     
     roomIdDisplay.textContent = currentRoomId;
     userNameDisplay.textContent = displayName || currentUserId;
+}
+
+// オーナーのみ表示される操作ボタンを制御
+function updateOwnerControls() {
+    if (currentIsOwner) {
+        revealBtn.style.display = '';
+        resetBtn.style.display = '';
+    } else {
+        revealBtn.style.display = 'none';
+        resetBtn.style.display = 'none';
+    }
 }
 
 function updateParticipantsList() {
