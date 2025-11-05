@@ -1,0 +1,21 @@
+{
+  "name": "planning-poker",
+  "version": "1.0.0",
+  "description": "Real-time planning poker web app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "planning-poker",
+    "agile",
+    "estimation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  }
+}

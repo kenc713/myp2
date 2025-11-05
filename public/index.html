@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プランニングポーカー - Planning Poker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎴 プランニングポーカー</h1>
+            <p class="subtitle">Planning Poker - リアルタイム見積もりツール</p>
+        </header>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen">
+            <div class="card">
+                <h2>セッションを始める</h2>
+                <div class="form-group">
+                    <label for="userName">あなたの名前:</label>
+                    <input type="text" id="userName" placeholder="例: 田中太郎" maxlength="20">
+                </div>
+                <button id="createRoomBtn" class="btn btn-primary">新しいルームを作成</button>
+                
+                <div class="divider">または</div>
+                
+                <div class="form-group">
+                    <label for="roomIdInput">ルームIDを入力:</label>
+                    <input type="text" id="roomIdInput" placeholder="例: ABC123" maxlength="6">
+                </div>
+                <button id="joinRoomBtn" class="btn btn-secondary">ルームに参加</button>
+            </div>
+        </div>
+
+        <!-- Room Screen -->
+        <div id="roomScreen" class="screen hidden">
+            <div class="room-header">
+                <div class="room-info">
+                    <h2>ルームID: <span id="roomIdDisplay"></span></h2>
+                    <p>参加者: <span id="userNameDisplay"></span></p>
+                </div>
+                <button id="copyRoomIdBtn" class="btn btn-small">📋 ルームIDをコピー</button>
+            </div>
+
+            <!-- Participants -->
+            <div class="participants-section">
+                <h3>参加者 (<span id="participantCount">0</span>)</h3>
+                <div id="participantsList" class="participants-list"></div>
+            </div>
+
+            <!-- Voting Cards -->
+            <div class="voting-section">
+                <h3>あなたの見積もりを選択:</h3>
+                <div class="cards-container" id="cardsContainer">
+                    <div class="card-item" data-value="0">0</div>
+                    <div class="card-item" data-value="1">1</div>
+                    <div class="card-item" data-value="2">2</div>
+                    <div class="card-item" data-value="3">3</div>
+                    <div class="card-item" data-value="5">5</div>
+                    <div class="card-item" data-value="8">8</div>
+                    <div class="card-item" data-value="13">13</div>
+                    <div class="card-item" data-value="21">21</div>
+                    <div class="card-item" data-value="?">?</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-section">
+                <button id="revealBtn" class="btn btn-primary">投票を公開</button>
+                <button id="resetBtn" class="btn btn-secondary">リセット</button>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsSection" class="results-section hidden">
+                <h3>投票結果:</h3>
+                <div id="resultsDisplay" class="results-display"></div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" class="status-message hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
