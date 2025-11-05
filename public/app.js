@@ -117,6 +117,8 @@ joinRoomBtn.addEventListener('click', () => {
 copyRoomIdBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(currentRoomId).then(() => {
         showStatus('ルームIDをコピーしました！', 'success');
+    }).catch(() => {
+        showStatus('コピーに失敗しました', 'error');
     });
 });
 
@@ -159,7 +161,15 @@ function handleRoomCreated(data) {
     currentRoomId = data.roomId;
     currentUserId = data.userId;
     
-    showRoomScreen();
+    // Initialize participants with self
+    participants.set(data.userId, { 
+        hasVoted: false, 
+        vote: null,
+        userName: data.userName || data.userId
+    });
+    
+    showRoomScreen(data.userName || data.userId);
+    updateParticipantsList();
     showStatus('ルームを作成しました！', 'success');
 }
 
@@ -167,13 +177,17 @@ function handleJoinedRoom(data) {
     currentRoomId = data.roomId;
     currentUserId = data.userId;
     
-    // Initialize participants
+    // Initialize participants with userNames
     participants.clear();
-    data.users.forEach(user => {
-        participants.set(user, { hasVoted: false, vote: null });
+    Object.entries(data.users).forEach(([userId, userName]) => {
+        participants.set(userId, { 
+            hasVoted: false, 
+            vote: null,
+            userName: userName
+        });
     });
     
-    showRoomScreen();
+    showRoomScreen(data.userName || data.userId);
     updateParticipantsList();
     
     if (data.revealed && data.votes) {
@@ -184,16 +198,18 @@ function handleJoinedRoom(data) {
 }
 
 function handleUserJoined(data) {
-    // Update participants list
+    // Update participants list with userNames
     participants.clear();
-    data.users.forEach(user => {
-        if (!participants.has(user)) {
-            participants.set(user, { hasVoted: false, vote: null });
-        }
+    Object.entries(data.users).forEach(([userId, userName]) => {
+        participants.set(userId, { 
+            hasVoted: false, 
+            vote: null,
+            userName: userName
+        });
     });
     
     updateParticipantsList();
-    showStatus(`${data.userId} が参加しました`, 'info');
+    showStatus(`${data.userName} が参加しました`, 'info');
 }
 
 function handleUserLeft(data) {
@@ -244,12 +260,12 @@ function handleVotesReset() {
 }
 
 // UI functions
-function showRoomScreen() {
+function showRoomScreen(displayName) {
     startScreen.classList.add('hidden');
     roomScreen.classList.remove('hidden');
     
     roomIdDisplay.textContent = currentRoomId;
-    userNameDisplay.textContent = currentUserId;
+    userNameDisplay.textContent = displayName || currentUserId;
 }
 
 function updateParticipantsList() {
@@ -268,7 +284,7 @@ function updateParticipantsList() {
         
         const name = document.createElement('div');
         name.className = 'participant-name';
-        name.textContent = userId;
+        name.textContent = data.userName || userId;
         
         const vote = document.createElement('div');
         vote.className = 'participant-vote';
@@ -295,9 +311,12 @@ function displayResults(votes) {
         const resultItem = document.createElement('div');
         resultItem.className = 'result-item';
         
+        const participant = participants.get(userId);
+        const displayName = participant ? participant.userName : userId;
+        
         const name = document.createElement('div');
         name.className = 'result-name';
-        name.textContent = userId;
+        name.textContent = displayName;
         
         const voteDisplay = document.createElement('div');
         voteDisplay.className = 'result-vote';

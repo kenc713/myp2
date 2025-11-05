@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,9 +21,20 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         try {
             const data = JSON.parse(message);
+            if (!data || typeof data.type !== 'string') {
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    message: 'Invalid message format'
+                }));
+                return;
+            }
             handleMessage(ws, data);
         } catch (error) {
             console.error('Error parsing message:', error);
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'Invalid message format'
+            }));
         }
     });
     
@@ -69,7 +81,8 @@ function handleMessage(ws, data) {
 
 function handleCreateRoom(ws, data) {
     const roomId = generateRoomId();
-    const userId = data.userName || 'Anonymous';
+    const userName = data.userName || 'Anonymous';
+    const userId = generateUserId(userName);
     
     rooms.set(roomId, {
         users: new Map(),
@@ -82,11 +95,13 @@ function handleCreateRoom(ws, data) {
     
     ws.roomId = roomId;
     ws.userId = userId;
+    ws.userName = userName;
     
     ws.send(JSON.stringify({
         type: 'roomCreated',
         roomId: roomId,
-        userId: userId
+        userId: userId,
+        userName: userName
     }));
 }
 
@@ -102,18 +117,27 @@ function handleJoinRoom(ws, data) {
         return;
     }
     
-    const userId = userName || 'Anonymous';
+    const name = userName || 'Anonymous';
+    const userId = generateUserId(name);
     room.users.set(userId, ws);
     
     ws.roomId = roomId;
     ws.userId = userId;
+    ws.userName = name;
+    
+    // Build user display map (userId -> userName)
+    const userList = {};
+    room.users.forEach((socket, id) => {
+        userList[id] = socket.userName || id;
+    });
     
     // Send current room state to new user
     ws.send(JSON.stringify({
         type: 'joinedRoom',
         roomId: roomId,
         userId: userId,
-        users: Array.from(room.users.keys()),
+        userName: name,
+        users: userList,
         votes: room.revealed ? Object.fromEntries(room.votes) : null,
         revealed: room.revealed
     }));
@@ -122,7 +146,8 @@ function handleJoinRoom(ws, data) {
     broadcastToRoom(roomId, {
         type: 'userJoined',
         userId: userId,
-        users: Array.from(room.users.keys())
+        userName: name,
+        users: userList
     }, ws);
 }
 
@@ -184,7 +209,13 @@ function broadcastToRoom(roomId, message, excludeWs = null) {
 }
 
 function generateRoomId() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
+    return crypto.randomBytes(3).toString('hex').toUpperCase();
+}
+
+function generateUserId(userName) {
+    const timestamp = Date.now().toString(36);
+    const random = crypto.randomBytes(2).toString('hex');
+    return `${userName}-${timestamp}-${random}`;
 }
 
 const PORT = process.env.PORT || 3000;
