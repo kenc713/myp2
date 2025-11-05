@@ -11,7 +11,6 @@ let currentSequence = 'fibonacci';
 const startScreen = document.getElementById('startScreen');
 const roomScreen = document.getElementById('roomScreen');
 const userNameInput = document.getElementById('userName');
-const sequenceSelect = document.getElementById('sequenceSelect');
 const roomIdInput = document.getElementById('roomIdInput');
 const createRoomBtn = document.getElementById('createRoomBtn');
 const joinRoomBtn = document.getElementById('joinRoomBtn');
@@ -116,8 +115,9 @@ createRoomBtn.addEventListener('click', () => {
     // ユーザー名取得（未入力時は匿名）
     const userName = userNameInput.value.trim() || '匿名';
     
-    // 選択された数列を取得してローカルに保存
-    const selectedSequence = (sequenceSelect && sequenceSelect.value) ? sequenceSelect.value : 'fibonacci';
+    // 選択された数列を取得してローカルに保存 (ラジオボタンから取得)
+    const selectedElem = document.querySelector('input[name="sequence"]:checked');
+    const selectedSequence = (selectedElem && selectedElem.value) ? selectedElem.value : 'fibonacci';
     currentSequence = selectedSequence;
 
     // カードを先にレンダリングしておく

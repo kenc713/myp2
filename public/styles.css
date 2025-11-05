@@ -354,3 +354,26 @@ header h1 {
         grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
     }
 }
+
+/* シーケンス選択ラジオボタン (横並び) */
+.sequence-options {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 8px;
+}
+.sequence-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    color: #333;
+}
+.sequence-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+}
