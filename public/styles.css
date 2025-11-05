@@ -29,6 +29,11 @@ header h1 {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+h2 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
 .subtitle {
     font-size: 1.1em;
     opacity: 0.9;
