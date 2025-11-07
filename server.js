@@ -247,3 +247,35 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Planning Poker server running on port ${PORT}`);
 });
+
+// Graceful shutdown: close WebSocket server and HTTP server on SIGTERM/SIGINT
+function shutdown() {
+    console.log('Shutting down server...');
+    try {
+        // Stop accepting new connections
+        wss.close(() => {
+            console.log('WebSocket server closed');
+        });
+    } catch (e) {
+        console.error('Error closing WebSocket server:', e);
+    }
+
+    try {
+        server.close(() => {
+            console.log('HTTP server closed');
+            process.exit(0);
+        });
+    } catch (e) {
+        console.error('Error closing HTTP server:', e);
+        process.exit(1);
+    }
+
+    // Fallback: force exit after 10s
+    setTimeout(() => {
+        console.warn('Forcing shutdown');
+        process.exit(1);
+    }, 10000);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
