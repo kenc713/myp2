@@ -112,8 +112,13 @@ function handleMessage(data) {
 // ルーム作成ボタン押下時の処理
 createRoomBtn.addEventListener('click', () => {
 
-    // ユーザー名取得（未入力時は匿名）
-    const userName = userNameInput.value.trim() || '匿名';
+    // ユーザー名取得（必須化）
+    const userName = userNameInput.value.trim();
+    if (!userName) {
+        showStatus('ユーザー名を入力してください。', 'error');
+        userNameInput.focus();
+        return;
+    }
     
     // 選択された数列を取得してローカルに保存 (ラジオボタンから取得)
     const selectedElem = document.querySelector('input[name="sequence"]:checked');
@@ -140,10 +145,15 @@ createRoomBtn.addEventListener('click', () => {
 // ルーム参加ボタン押下時の処理
 joinRoomBtn.addEventListener('click', () => {
     const roomId = roomIdInput.value.trim().toUpperCase();
-    const userName = userNameInput.value.trim() || '匿名';
+    const userName = userNameInput.value.trim();
     
     if (!roomId) {
         showStatus('ルームIDを入力してください', 'error');
+        return;
+    }
+    if (!userName) {
+        showStatus('ユーザー名を入力してください。', 'error');
+        userNameInput.focus();
         return;
     }
     
