@@ -44,12 +44,12 @@ function connectWebSocket() {
 
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        showStatus('接続エラーが発生しました', 'error');
+        showStatus('接続エラーが発生しました。', 'error');
     };
 
     ws.onclose = () => {
         console.log('Disconnected from server');
-        showStatus('サーバーから切断されました', 'error');
+        showStatus('サーバーから切断されました。', 'error');
     };
 }
 
@@ -148,7 +148,7 @@ joinRoomBtn.addEventListener('click', () => {
     const userName = userNameInput.value.trim();
     
     if (!roomId) {
-        showStatus('ルームIDを入力してください', 'error');
+        showStatus('ルームIDを入力してください。', 'error');
         return;
     }
     if (!userName) {
@@ -173,7 +173,7 @@ copyRoomIdBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(currentRoomId).then(() => {
         showStatus('ルームIDをコピーしました！', 'success');
     }).catch(() => {
-        showStatus('コピーに失敗しました', 'error');
+        showStatus('コピーに失敗しました。', 'error');
     });
 });
 
@@ -306,13 +306,13 @@ function handleUserJoined(data) {
         currentIsOwner = (currentUserId === data.ownerId);
         updateOwnerControls();
     }
-    showStatus(`${data.userName} が参加しました`, 'info');
+    showStatus(`${data.userName} が参加しました。`, 'info');
 }
 
 function handleUserLeft(data) {
     participants.delete(data.userId);
     updateParticipantsList();
-    showStatus(`${data.userName || data.userId} が退出しました`, 'info');
+    showStatus(`${data.userName || data.userId} が退出しました。`, 'info');
 }
 
 function handleVoteUpdated(data) {
@@ -359,7 +359,7 @@ function handleVotesReset() {
         card.classList.remove('selected');
     });
     updateParticipantsList();
-    showStatus('投票がリセットされました', 'info');
+    showStatus('投票がリセットされました。', 'info');
 }
 
 function showRoomScreen(displayName) {
