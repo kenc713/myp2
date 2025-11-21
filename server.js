@@ -171,9 +171,18 @@ function handleVote(ws, data) {
     const room = rooms.get(ws.roomId);
     
     if (!room) return;
-    
+    // Validation: if sequence is 4choice, only accept A/B/C/D
+    const sequence = room.sequence || 'fibonacci';
+    if (sequence === '4choice') {
+        const allowed = new Set(['A', 'B', 'C', 'D']);
+        if (!allowed.has(vote)) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Invalid vote value for 4choice' }));
+            return;
+        }
+    }
+
     room.votes.set(ws.userId, vote);
-    
+
     // Notify all users that someone voted (but not the vote value until revealed)
     broadcastToRoom(ws.roomId, {
         type: 'voteUpdated',
