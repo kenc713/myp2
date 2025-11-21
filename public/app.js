@@ -6,6 +6,7 @@ let currentVote = null;
 let participants = new Map();
 let currentIsOwner = false;
 let currentSequence = 'fibonacci';
+let statusTimeout = null;
 
 // DOM 要素
 const startScreen = document.getElementById('startScreen');
@@ -343,7 +344,18 @@ function handleVotesRevealed(data) {
     
     // 結果パネルは廃止、参加者カードに投票値を表示する
     updateParticipantsList();
-    showStatus('投票が公開されました！', 'success');
+    // If metrics present, include median/mean and excluded count in the existing "投票が公開されました！" message
+    if (data.metrics) {
+        const median = (data.metrics.median === null) ? 'N/A' : Number(data.metrics.median);
+        const mean = (data.metrics.mean === null) ? 'N/A' : Number(data.metrics.mean.toFixed ? data.metrics.mean.toFixed(2) : data.metrics.mean);
+        const excluded = data.metrics.excludedCount || 0;
+        const message = `投票が公開されました！\n中央値: ${median} \n平均: ${mean} \n(除外: ${excluded} 件)`;
+        // Make this persistent until the next toast replaces it
+        showStatus(message, 'success', null);
+    } else {
+        // Make this persistent until the next toast replaces it
+        showStatus('投票が公開されました！', 'success', null);
+    }
 }
 
 function handleVotesReset() {
@@ -435,7 +447,7 @@ function updateParticipantsList() {
 
 // displayResults 関数は削除され、参加者カードに投票が表示されるようになりました。
 
-function showStatus(message, type = 'info') {
+function showStatus(message, type = 'info', duration = 3000) {
     /**
      * 一時的なステータスメッセージを表示する。
      *
@@ -443,13 +455,29 @@ function showStatus(message, type = 'info') {
      * @param {string} type - メッセージの種類: 'info', 'success', 'error'。
      */
 
+    // Allow \n in message to render as line breaks by preserving line breaks
+    statusMessage.style.whiteSpace = 'pre-line';
     statusMessage.textContent = message;
     statusMessage.className = `status-message ${type}`;
     statusMessage.classList.remove('hidden');
-    
-    setTimeout(() => {
-        statusMessage.classList.add('hidden');
-    }, 3000);
+
+    // Clear previous timeout if present
+    if (statusTimeout) {
+        clearTimeout(statusTimeout);
+        statusTimeout = null;
+    }
+
+    // If duration is a positive number, auto-hide after that many ms.
+    // If duration is null/undefined/0 or not a positive number, keep the
+    // status visible until the next call to showStatus replaces it.
+    if (typeof duration === 'number' && duration > 0) {
+        statusTimeout = setTimeout(() => {
+            statusMessage.classList.add('hidden');
+            statusTimeout = null;
+        }, duration);
+    } else {
+        statusTimeout = null;
+    }
 }
 
 // ページアンロード時の処理

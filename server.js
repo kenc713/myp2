@@ -205,10 +205,67 @@ function handleRevealVotes(ws, data) {
 
     room.revealed = true;
 
-    broadcastToRoom(ws.roomId, {
-        type: 'votesRevealed',
-        votes: Object.fromEntries(room.votes)
-    });
+    // Prepare base payload
+    const votesObj = Object.fromEntries(room.votes);
+
+    // Compute metrics only for certain sequence types
+    const seq = room.sequence || 'fibonacci';
+    let metrics = null;
+    try {
+        if (seq === 'fibonacci' || seq === 'natural') {
+            // Extract numeric votes, excluding explicit "?" entries and non-numeric values
+            const numericValues = [];
+            let excludedCount = 0;
+            for (const v of Object.values(votesObj)) {
+                if (v === "?") {
+                    excludedCount += 1;
+                    continue;
+                }
+                const n = Number(v);
+                if (!Number.isFinite(n)) {
+                    // treat non-numeric as excluded
+                    excludedCount += 1;
+                    continue;
+                }
+                numericValues.push(n);
+            }
+
+            if (numericValues.length > 0) {
+                // mean
+                const sum = numericValues.reduce((a, b) => a + b, 0);
+                const mean = sum / numericValues.length;
+                // median
+                numericValues.sort((a, b) => a - b);
+                let median;
+                const m = numericValues.length;
+                if (m % 2 === 1) {
+                    median = numericValues[(m - 1) / 2];
+                } else {
+                    median = (numericValues[m / 2 - 1] + numericValues[m / 2]) / 2;
+                }
+                metrics = {
+                    median: median,
+                    mean: mean,
+                    excludedCount: excludedCount
+                };
+            } else {
+                // No numeric values - still report excludedCount if any
+                metrics = {
+                    median: null,
+                    mean: null,
+                    excludedCount: Object.keys(votesObj).length
+                };
+            }
+        }
+    } catch (e) {
+        console.error('Error computing metrics:', e);
+        metrics = null;
+    }
+
+    // Broadcast votesRevealed with optional metrics
+    const payload = { type: 'votesRevealed', votes: votesObj };
+    if (metrics) payload.metrics = metrics;
+    broadcastToRoom(ws.roomId, payload);
 }
 
 function handleResetVotes(ws, data) {
